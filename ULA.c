@@ -70,8 +70,51 @@ void ULA_MUL(int8_t *A, int8_t *Q, int8_t *M, int8_t *overflow) {
 }
 
 //Divisao com sinal de Q(Dividendo de 8bits) por M(Divisor de 8bits) com Quociente em Q(8bits) e Resto em A(8bits)
-void ULA_DIV(int8_t *A, int8_t *Q, int8_t * M, int8_t * overflow){
-	//Baseado no livro Willian Stallings 10ed, capitulo 10, pag. 296	
+void ULA_DIV(int8_t *A, int8_t *Q, int8_t *M, int8_t *overflow) {
+    int8_t divisor = *M;
+    if (divisor == 0) {
+        *overflow = 1;
+        return;
+    }
+
+    int8_t dividend = *Q;
+    if (dividend == -128 && divisor == -1) {
+        *overflow = 1;
+        return;
+    }
+
+    int sign_dividend = (dividend < 0) ? -1 : 1;
+    int sign_divisor = (divisor < 0) ? -1 : 1;
+
+    uint8_t abs_dividend = (dividend == -128) ? 128 : (uint8_t)abs(dividend);
+    uint8_t abs_divisor = (uint8_t)abs(divisor);
+
+    uint8_t a = 0;
+    uint8_t q = abs_dividend;
+
+    for (int i = 0; i < 8; i++) {
+        a = (a << 1) | (q >> 7);
+        q <<= 1;
+
+        if (a >= abs_divisor) {
+            a -= abs_divisor;
+            q |= 1;
+        }
+    }
+
+    int8_t quotient = q;
+    if (sign_dividend != sign_divisor) {
+        quotient = -quotient;
+    }
+
+    int8_t remainder = a;
+    if (sign_dividend < 0) {
+        remainder = -remainder;
+    }
+
+    *A = remainder;
+    *Q = quotient;
+    *overflow = 0;
 }
 
 //Descomente as fun��es caso deseja implementar as fun��es de Ponto Flutuante
