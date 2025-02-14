@@ -49,7 +49,7 @@ void ULA_SUB(int8_t *A, int8_t * B, int8_t * overflow) {
     uint8_t a = (uint8_t)(*A);
     uint8_t b = (uint8_t)(*B);
 
-    complementador(&b); // Computa o complemento de dois de B (ou seja, -B)
+    complementador(&b); 
 
     uint8_t co;
     uint8_t s;
@@ -57,7 +57,7 @@ void ULA_SUB(int8_t *A, int8_t * B, int8_t * overflow) {
     somador8bits(a, b, 0, &co, &s);
 
     int8_t a_sign = (*A) >> 7;
-    int8_t minus_b_sign = (int8_t)b >> 7; // O sinal de -B após o complemento
+    int8_t minus_b_sign = (int8_t)b >> 7; 
     int8_t s_sign = (int8_t)s >> 7;
 
     *overflow = (a_sign == minus_b_sign) && (s_sign != a_sign) ? 1 : 0;
@@ -67,7 +67,39 @@ void ULA_SUB(int8_t *A, int8_t * B, int8_t * overflow) {
 
 //Multiplicacao de Q(8bits) com M(8bits) gera resultado de 16bits que esta em A(8bits) e Q(8bits)
 void ULA_MUL(int8_t *A, int8_t *Q, int8_t *M, int8_t *overflow) {
+    int8_t A_reg = 0;        
+    int8_t Q_reg = *Q;       
+    int8_t M_reg = *M;       
+    int8_t Q_menos_1 = 0;    
+    int8_t temp_overflow;
+
+
+    for (int i = 0; i < 8; i++) {
+        int8_t Q0 = (int8_t)(Q_reg & 1);
+
+        if (Q0 == 1 && Q_menos_1 == 0) {
+            ULA_SUB(&A_reg, &M_reg, &temp_overflow);
+        }
+        else if (Q0 == 0 && Q_menos_1 == 1) {
+            ULA_ADD(&A_reg, &M_reg, &temp_overflow);
+        }
+
+        int16_t combo = ((int16_t)A_reg << 8) | (uint8_t)Q_reg;
+
+        combo >>= 1;
+
+        Q_menos_1 = Q0;
+
+        A_reg = (int8_t)(combo >> 8);
+        Q_reg = (int8_t)(combo & 0xFF);
+    }
+
+    *A = A_reg;
+    *Q = Q_reg;
+    *overflow = 0; 
 }
+
+
 
 //Divisao com sinal de Q(Dividendo de 8bits) por M(Divisor de 8bits) com Quociente em Q(8bits) e Resto em A(8bits)
 void ULA_DIV(int8_t *A, int8_t *Q, int8_t *M, int8_t *overflow) {
